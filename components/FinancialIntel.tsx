@@ -177,11 +177,24 @@ export default function FinancialIntel() {
   };
 
   return (
-    <div className="animate-fade-in space-y-12">
+    <motion.div 
+      initial="hidden"
+      animate="show"
+      variants={{
+        show: { transition: { staggerChildren: 0.1 } }
+      }}
+      className="space-y-12"
+    >
       {/* Global Liquidity Matrix */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className="md:col-span-2 glass p-10 rounded-[3rem] border-white/5 bg-gradient-to-br from-[#AF52DE]/10 to-transparent flex items-center justify-between overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-10 opacity-10">
+      <motion.section 
+        variants={{
+          hidden: { opacity: 0, scale: 0.95 },
+          show: { opacity: 1, scale: 1 }
+        }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      >
+         <div className="md:col-span-2 glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-white/5 bg-gradient-to-br from-[#AF52DE]/10 to-transparent flex flex-col md:flex-row md:items-center justify-between overflow-hidden relative gap-6">
+            <div className="absolute top-0 right-0 p-10 opacity-10 hidden md:block">
                <PieChart className="w-40 h-40" />
             </div>
             <div className="relative z-10 space-y-2">
@@ -189,8 +202,8 @@ export default function FinancialIntel() {
                   <Zap className="w-4 h-4" />
                   <span className="text-[10px] font-black uppercase tracking-[4px]">Liquid Capital Matrix</span>
                </div>
-               <div className="text-6xl font-black tracking-tighter">₹{bankBalance.toLocaleString()}</div>
-               <p className="text-gray-500 font-medium text-sm">System-wide verified balance.</p>
+               <div className="text-4xl md:text-6xl font-black tracking-tighter">₹{bankBalance.toLocaleString()}</div>
+               <p className="text-gray-500 font-medium text-xs md:text-sm">System-wide verified balance.</p>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
                <button 
@@ -199,97 +212,122 @@ export default function FinancialIntel() {
                    if (val) updateBankBalance(Number(val));
                  }}
                  disabled={isUpdatingBalance}
-                 className="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-transform shadow-xl"
+                 className="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-transform shadow-xl w-full md:w-auto"
                >
                  Update Liquid
                </button>
             </div>
          </div>
 
-         <div className="glass p-10 rounded-[3rem] border-white/5 flex flex-col justify-center gap-4">
+         <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-white/5 flex flex-col justify-center gap-4">
             <div className="text-[10px] font-black uppercase tracking-[4px] text-gray-500">Active Liabilities</div>
-            <div className="text-4xl font-black text-[#FF2D55]">₹{loans.reduce((acc, l) => acc + l.principal, 0).toLocaleString()}</div>
-            <div className="flex items-center gap-2 text-gray-400 text-xs font-medium">
+            <div className="text-3xl md:text-4xl font-black text-[#FF2D55]">₹{loans.reduce((acc, l) => acc + l.principal, 0).toLocaleString()}</div>
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] font-medium">
                <AlertTriangle className="w-3 h-3 text-[#FF2D55]" />
                Across {loans.length} active nodes
             </div>
          </div>
-      </section>
+      </motion.section>
 
       {/* Secondary Matrix: External Ledger */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <div className="glass p-8 rounded-[2.5rem] border-white/5 flex items-center justify-between">
+      <motion.section 
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: { opacity: 1, y: 0 }
+        }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
+         <div className="glass p-8 rounded-[2rem] border-white/5 flex items-center justify-between bg-green-500/[0.02]">
             <div className="space-y-1">
                <div className="text-[10px] font-black uppercase tracking-[3px] text-green-400/60">External Receivables</div>
                <div className="text-3xl font-black text-green-400 tracking-tighter">₹{externalMetrics.receivables.toLocaleString()}</div>
             </div>
             <TrendingUp className="w-8 h-8 text-green-400 opacity-20" />
          </div>
-         <div className="glass p-8 rounded-[2.5rem] border-white/5 flex items-center justify-between">
+         <div className="glass p-8 rounded-[2rem] border-white/5 flex items-center justify-between bg-[#FF2D55]/[0.02]">
             <div className="space-y-1">
                <div className="text-[10px] font-black uppercase tracking-[3px] text-[#FF2D55]/60">External Payables</div>
                <div className="text-3xl font-black text-[#FF2D55] tracking-tighter">₹{externalMetrics.payables.toLocaleString()}</div>
             </div>
             <TrendingDown className="w-8 h-8 text-[#FF2D55] opacity-20" />
          </div>
-      </section>
+      </motion.section>
 
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
+      <motion.section 
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: { opacity: 1, y: 0 }
+        }}
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between px-2">
            <h2 className="text-[12px] uppercase font-black tracking-[4px] text-gray-500">Recurring Commitments</h2>
-           <button onClick={() => setShowAddRecurring(true)} className="p-3 bg-[#FF2D55]/10 rounded-xl text-[#FF2D55] hover:bg-[#FF2D55] hover:text-white transition-all"><Plus className="w-5 h-5" /></button>
+           <button onClick={() => setShowAddRecurring(true)} className="p-3 bg-[#FF2D55]/10 rounded-xl text-[#FF2D55] hover:scale-110 active:scale-95 transition-all outline-none">
+             <Plus className="w-5 h-5" />
+           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {recurring.map(pay => (
-             <div key={pay.id} className="glass p-8 rounded-[2.5rem] border-white/5 space-y-4">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-[#FF2D55]/10 flex items-center justify-center text-[#FF2D55]"><Repeat className="w-5 h-5" /></div>
-                   <div>
-                      <h4 className="font-bold tracking-tight">{pay.title}</h4>
-                      <p className="text-[9px] uppercase font-black text-gray-500 tracking-widest">{pay.frequency} • {pay.type}</p>
-                   </div>
-                </div>
-                <div className="text-3xl font-black tracking-tighter">₹{pay.amount.toFixed(0)}</div>
-             </div>
+             <GlassItem 
+               key={pay.id} 
+               icon={<Repeat className="w-5 h-5" />}
+               title={pay.title}
+               subtitle={`${pay.frequency} • ${pay.type}`}
+               amount={pay.amount}
+               accent="#FF2D55"
+             />
            ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
+      <motion.section 
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: { opacity: 1, y: 0 }
+        }}
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between px-2">
            <h2 className="text-[12px] uppercase font-black tracking-[4px] text-gray-500">Loan & Debt Protocols</h2>
-           <button onClick={() => setShowAddLoan(true)} className="p-3 bg-white/5 rounded-xl text-white hover:bg-white/10 transition-all"><Plus className="w-5 h-5" /></button>
+           <button onClick={() => setShowAddLoan(true)} className="p-3 bg-white/5 rounded-xl text-white hover:scale-110 active:scale-95 transition-all outline-none">
+             <Plus className="w-5 h-5" />
+           </button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
            {loans.map(loan => (
-             <div key={loan.id} className="glass p-10 rounded-[3rem] border-white/5 relative overflow-hidden group">
+             <div key={loan.id} className="glass p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border-white/5 relative overflow-hidden group hover:border-[#FF2D55]/20 transition-all">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                    <div className="space-y-1">
-                      <h3 className="text-2xl font-black uppercase italic tracking-tighter">{loan.title}</h3>
-                      <div className="flex items-center gap-4 text-[10px] uppercase font-black tracking-widest text-gray-500">
+                      <h3 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter">{loan.title}</h3>
+                      <div className="flex items-center gap-4 text-[9px] md:text-[10px] uppercase font-black tracking-widest text-gray-500">
                          <span>Rate: {loan.interestRate}%</span>
                          <span>Term: {loan.tenureMonths}mo</span>
                       </div>
                    </div>
-                   <div className="text-right">
-                      <div className="text-sm text-gray-500 uppercase font-bold tracking-widest mb-1">Monthly EMI</div>
-                      <div className="text-4xl font-black text-[#FF2D55] tracking-tighter">₹{loan.emi.toFixed(0)}</div>
+                   <div className="md:text-right">
+                      <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Monthly EMI</div>
+                      <div className="text-3xl md:text-4xl font-black text-[#FF2D55] tracking-tighter">₹{loan.emi.toFixed(0)}</div>
                    </div>
                 </div>
                 
                 <div className="mt-8 space-y-2 relative z-10">
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                   <div className="flex justify-between text-[9px] md:text-[10px] font-black uppercase tracking-widest mb-2">
                       <span className="text-gray-500">Repayment Progress</span>
                       <span className="text-white">₹{loan.remainingAmount.toFixed(0)} Left</span>
                    </div>
-                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#FF2D55]" style={{ width: `${((loan.principal - loan.remainingAmount) / loan.principal) * 100}%` }}></div>
+                   <div className="h-1.5 md:h-2 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${((loan.principal - loan.remainingAmount) / loan.principal) * 100}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-full bg-[#FF2D55] shadow-[0_0_10px_rgba(255,45,85,0.5)]" 
+                      />
                    </div>
                 </div>
              </div>
            ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Modals for adding Loan and Recurring... */}
       <AnimatePresence>
@@ -335,6 +373,30 @@ export default function FinancialIntel() {
            </div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
+
+const GlassItem = ({ icon, title, subtitle, amount, accent }: any) => (
+  <motion.div 
+    variants={{
+      hidden: { opacity: 0, scale: 0.9 },
+      show: { opacity: 1, scale: 1 }
+    }}
+    className="glass p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-white/5 space-y-4 hover:border-white/10 transition-all group"
+  >
+     <div className="flex items-center gap-3">
+        <div 
+          className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+          style={{ backgroundColor: `${accent}10`, color: accent }}
+        >
+          {icon}
+        </div>
+        <div>
+           <h4 className="font-bold tracking-tight text-sm md:text-base group-hover:text-white transition-colors">{title}</h4>
+           <p className="text-[8px] md:text-[9px] uppercase font-black text-gray-500 tracking-widest">{subtitle}</p>
+        </div>
+     </div>
+     <div className="text-2xl md:text-3xl font-black tracking-tighter">₹{amount.toLocaleString()}</div>
+  </motion.div>
+);
