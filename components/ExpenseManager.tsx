@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
+import FinancialIntel from './FinancialIntel';
 import { checkAffordability, calculateDailyBudget } from '@/lib/finance';
 import { downloadJson, parseJsonFile } from '@/lib/data-utils';
 
@@ -27,7 +28,7 @@ const GlassCard = ({ children, className = "", onClick }: { children: React.Reac
 
 export default function ExpenseManager() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'chat' | 'people' | 'history'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'people' | 'history' | 'afford' | 'intel'>('chat');
   const [contacts, setContacts] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [expenseMessages, setExpenseMessages] = useState<any[]>([]);
@@ -173,6 +174,19 @@ export default function ExpenseManager() {
     try {
       const batch = writeBatch(db);
       const total = txData.totalAmount;
+
+      // Update bank balance if 'me' paid
+      if (isMePayer) {
+        const bQuery = query(collection(db, 'users', user.uid, 'bank_balances'), limit(1));
+        const bSnap = await getDocs(bQuery);
+        if (!bSnap.empty) {
+          const bRef = doc(db, 'users', user.uid, 'bank_balances', bSnap.docs[0].id);
+          batch.update(bRef, {
+            amount: increment(-total),
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
       
       // Calculate shares based on weights if provided, otherwise equal split
       const getShareFor = (handle: string) => {
@@ -303,8 +317,30 @@ export default function ExpenseManager() {
         } else {
           await processTransaction(result);
         }
+      } else if (result.intent === 'matrix_update' && result.matrixData) {
+        setProcessingStatus('Syncing liquid matrix with core database...');
+        if (result.matrixData.type === 'bank_balance' && result.matrixData.amount !== undefined) {
+          const bQuery = query(collection(db, 'users', user.uid, 'bank_balances'), limit(1));
+          const snap = await getDocs(bQuery);
+          
+          if (snap.empty) {
+            await addDoc(collection(db, 'users', user.uid, 'bank_balances'), {
+              amount: result.matrixData.amount,
+              userId: user.uid,
+              updatedAt: serverTimestamp()
+            });
+          } else {
+            await updateDoc(doc(db, 'users', user.uid, 'bank_balances', snap.docs[0].id), {
+              amount: result.matrixData.amount,
+              updatedAt: serverTimestamp()
+            });
+          }
+          await addExpenseMessage(`Liquid Capital Matrix recalibrated to ₹${result.matrixData.amount.toLocaleString()}.`, 'ai');
+        } else {
+           await addExpenseMessage("I detected a matrix update intent but the data node was incomplete.", 'ai');
+        }
       } else {
-        await addExpenseMessage("I couldn't quite understand if that was a transaction. Use @mentions for clarity.", 'ai');
+        await addExpenseMessage("I couldn't quite understand if that was a transaction or matrix update. Use @mentions for clarity.", 'ai');
       }
     } catch (err) {
       console.error(err);
@@ -398,6 +434,20 @@ export default function ExpenseManager() {
     batch.update(contactRef, {
       balance: increment(type === 'owed' ? amount : -amount)
     });
+
+    // Update bank balance: 
+    // If I Owe Him (type === 'owe'), and I'm paying him, bank balance decreases.
+    // If He Owes Me (type === 'owed'), and he's paying me, bank balance increases.
+    // Assuming manual adjustments are usually settlements/direct payments.
+    const bQuery = query(collection(db, 'users', user.uid, 'bank_balances'), limit(1));
+    const bSnap = await getDocs(bQuery);
+    if (!bSnap.empty) {
+      const bRef = doc(db, 'users', user.uid, 'bank_balances', bSnap.docs[0].id);
+      batch.update(bRef, {
+        amount: increment(type === 'owe' ? -amount : amount),
+        updatedAt: serverTimestamp()
+      });
+    }
 
     await batch.commit();
     setAdjustmentAmount('');
@@ -941,9 +991,10 @@ export default function ExpenseManager() {
   };
 
   const navigation = [
-    { id: 'chat', icon: Send, label: 'Audit' },
+    { id: 'chat', label: 'Matrix', icon: Bot },
     { id: 'people', icon: Users, label: 'People' },
     { id: 'history', icon: History, label: 'History' },
+    { id: 'intel', icon: TrendingUp, label: 'Intel' },
     { id: 'afford', icon: ShieldCheck, label: 'Afford' }
   ] as const;
 
@@ -1034,6 +1085,11 @@ export default function ExpenseManager() {
                </div>
             )}
             {activeTab === 'afford' && renderAffordability()}
+            {activeTab === 'intel' && (
+              <div className="animate-fade-in py-6">
+                <FinancialIntel />
+              </div>
+            )}
           </div>
         )}
       </div>

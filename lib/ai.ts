@@ -114,6 +114,7 @@ Your job is to parse messages like "I paid 300 for @deepak and @ankur" or "@deep
 - If the user says "@name paid for me and @other", payer is "@name".
 - If a total amount is split, identify who was involved.
 - If it's a payment/settlement (e.g. "I paid @deepak 100 back"), mark it clearly.
+- If the user says "My bank balance is X", mark intent as "matrix_update", matrixData.type as "bank_balance", and amount.
 - IMPORTANT: Support weighted splits. If the user says "@deepak covers 2 shares and @ankur covers 1 of a 5-share split", capture this in splitWeights.
 Return structured JSON.`;
 
@@ -146,7 +147,15 @@ Return structured JSON.`;
             },
             description: "Optional list of handles to their share counts"
           },
-          intent: { type: Type.STRING, enum: ["transaction", "query", "unknown"] }
+          intent: { type: Type.STRING, enum: ["transaction", "query", "matrix_update", "unknown"] },
+          matrixData: {
+            type: Type.OBJECT,
+            properties: {
+              type: { type: Type.STRING, enum: ["bank_balance", "loan", "recurring"] },
+              amount: { type: Type.NUMBER },
+              title: { type: Type.STRING }
+            }
+          }
         },
         required: ["totalAmount", "payer", "involvedMembers", "intent"]
       },

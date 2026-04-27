@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   CreditCard, Calendar, Repeat, ArrowRight, 
   Plus, Trash2, PieChart, Info, AlertTriangle,
-  Zap, Clock, ShieldCheck
+  Zap, Clock, ShieldCheck, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useAuth } from '@/lib/firebase-provider';
 import { db } from '@/lib/firebase';
@@ -24,6 +24,7 @@ export default function FinancialIntel() {
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [bankBalance, setBankBalance] = useState<number>(0);
   const [isUpdatingBalance, setIsUpdatingBalance] = useState(false);
+  const [externalMetrics, setExternalMetrics] = useState({ receivables: 0, payables: 0 });
   
   const [newRecurring, setNewRecurring] = useState({
     title: '', amount: 0, frequency: 'monthly' as 'monthly' | 'weekly',
@@ -54,10 +55,22 @@ export default function FinancialIntel() {
       }
     });
 
+    const cQuery = query(collection(db, 'users', user.uid, 'contacts'));
+    const unsubscribeC = onSnapshot(cQuery, (snap) => {
+      let r = 0, p = 0;
+      snap.docs.forEach(d => {
+        const bal = d.data().balance || 0;
+        if (bal > 0) r += bal;
+        else if (bal < 0) p += Math.abs(bal);
+      });
+      setExternalMetrics({ receivables: r, payables: p });
+    });
+
     return () => {
       unsubscribeR();
       unsubscribeL();
       unsubscribeB();
+      unsubscribeC();
     };
   }, [user]);
 
@@ -87,6 +100,18 @@ export default function FinancialIntel() {
 
           const payRef = doc(db, 'users', user.uid, 'recurring_payments', pay.id);
           batch.update(payRef, { lastGenerated: serverTimestamp() });
+          
+          // Deduct from bank balance
+          const bQuery = query(collection(db, 'users', user.uid, 'bank_balances'), limit(1));
+          const bSnap = await getDocs(bQuery);
+          if (!bSnap.empty) {
+            const bRef = doc(db, 'users', user.uid, 'bank_balances', bSnap.docs[0].id);
+            batch.update(bRef, {
+              amount: increment(-pay.amount),
+              updatedAt: serverTimestamp()
+            });
+          }
+          
           generatedCount++;
         }
       }
@@ -188,6 +213,24 @@ export default function FinancialIntel() {
                <AlertTriangle className="w-3 h-3 text-[#FF2D55]" />
                Across {loans.length} active nodes
             </div>
+         </div>
+      </section>
+
+      {/* Secondary Matrix: External Ledger */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <div className="glass p-8 rounded-[2.5rem] border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+               <div className="text-[10px] font-black uppercase tracking-[3px] text-green-400/60">External Receivables</div>
+               <div className="text-3xl font-black text-green-400 tracking-tighter">₹{externalMetrics.receivables.toLocaleString()}</div>
+            </div>
+            <TrendingUp className="w-8 h-8 text-green-400 opacity-20" />
+         </div>
+         <div className="glass p-8 rounded-[2.5rem] border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+               <div className="text-[10px] font-black uppercase tracking-[3px] text-[#FF2D55]/60">External Payables</div>
+               <div className="text-3xl font-black text-[#FF2D55] tracking-tighter">₹{externalMetrics.payables.toLocaleString()}</div>
+            </div>
+            <TrendingDown className="w-8 h-8 text-[#FF2D55] opacity-20" />
          </div>
       </section>
 

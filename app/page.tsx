@@ -11,7 +11,7 @@ import FinancialIntel from '@/components/FinancialIntel';
 
 export default function Home() {
   const { user, login, loading: authLoading } = useAuth();
-  const [appMode, setAppMode] = useState<'launcher' | 'hyper' | 'expense' | 'learning' | 'intel'>('launcher');
+  const [appMode, setAppMode] = useState<'launcher' | 'hyper' | 'expense' | 'learning'>('launcher');
 
   if (authLoading) return (
     <div className="h-screen flex items-center justify-center bg-black">
@@ -89,20 +89,6 @@ export default function Home() {
                   </button>
 
                   <button 
-                    onClick={() => setAppMode('intel')}
-                    className="group relative overflow-hidden glass p-8 rounded-[40px] border-white/5 hover:border-[#AF52DE]/30 transition-all text-left"
-                  >
-                     <div className="relative z-10 space-y-6">
-                       <BarChart3 className="w-10 h-10 text-[#AF52DE] group-hover:scale-110 transition-transform" />
-                       <div>
-                         <h3 className="text-xl font-black uppercase tracking-tighter">Finance Intel</h3>
-                         <p className="text-gray-500 text-xs mt-2 font-medium">Loans, EMI & Recurring matrix.</p>
-                       </div>
-                     </div>
-                     <div className="absolute inset-0 bg-[#AF52DE]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </button>
-
-                  <button 
                     onClick={() => setAppMode('learning')}
                     className="group relative overflow-hidden glass p-8 rounded-[40px] border-white/5 hover:border-[#5856D6]/30 transition-all text-left"
                   >
@@ -129,12 +115,6 @@ export default function Home() {
               {appMode === 'hyper' && <HyperCoach />}
               {appMode === 'expense' && <ExpenseManager />}
               {appMode === 'learning' && <LearningEngine />}
-              {appMode === 'intel' && (
-                <div className="max-w-6xl mx-auto py-12 px-6">
-                   <h1 className="text-4xl font-black tracking-tighter uppercase italic mb-10">Finance Intel Matrix</h1>
-                   <FinancialIntel />
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -147,8 +127,7 @@ export default function Home() {
             { id: 'launcher', icon: LayoutGrid, label: 'Systems', color: 'text-gray-400' },
             { id: 'hyper', icon: Dumbbell, label: 'Coach', color: 'text-[#FF2D55]' },
             { id: 'expense', icon: Wallet, label: 'Engine', color: 'text-[#FF2D55]' },
-            { id: 'learning', icon: Binary, label: 'Learning', color: 'text-[#5856D6]' },
-            { id: 'intel', icon: BarChart3, label: 'Intel', color: 'text-[#AF52DE]' }
+            { id: 'learning', icon: Binary, label: 'Learning', color: 'text-[#5856D6]' }
           ].map((item) => (
             <button
               key={item.id}
