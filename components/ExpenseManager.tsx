@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Send, Bot, Users, Receipt, TrendingUp, TrendingDown, 
   ChevronRight, Plus, X, Search, History, Calendar,
-  Trash2, Edit3, AlertTriangle, ShieldCheck, Wallet, ArrowUpRight, ArrowDownLeft, CheckCircle2, UserPlus, Loader2, Download, Import
+  Trash2, Edit3, AlertTriangle, ShieldCheck, Wallet, ArrowUpRight, ArrowDownLeft, CheckCircle2, UserPlus, Loader2, Download, Import, LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '@/lib/firebase-provider';
 import { interpretExpense } from '@/lib/ai';
@@ -28,9 +28,10 @@ const GlassCard = ({ children, className = "", onClick }: { children: React.Reac
 
 export default function ExpenseManager() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'chat' | 'people' | 'history' | 'afford' | 'intel'>('chat');
+  const [activeTab, setActiveTab] = useState<'summary' | 'chat' | 'people' | 'history' | 'afford' | 'intel'>('summary');
   const [contacts, setContacts] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [bankBalance, setBankBalance] = useState<number>(0);
   const [expenseMessages, setExpenseMessages] = useState<any[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<any | null>(null);
   const [chatInput, setChatInput] = useState('');
@@ -98,10 +99,18 @@ export default function ExpenseManager() {
       }
     );
 
+    const bankQuery = query(collection(db, 'users', user.uid, 'bank_balances'), limit(1));
+    const unsubscribeBank = onSnapshot(bankQuery, (snap) => {
+      if (!snap.empty) {
+        setBankBalance(snap.docs[0].data().amount || 0);
+      }
+    });
+
     return () => {
       unsubscribeContacts();
       unsubscribeExpenses();
       unsubscribeChats();
+      unsubscribeBank();
     };
   }, [user]);
 
@@ -166,6 +175,121 @@ export default function ExpenseManager() {
     setShowAddPerson(false);
   };
 
+  const renderSummary = () => {
+    const totalOwedMe = contacts.reduce((sum, c) => sum + (c.balance > 0 ? c.balance : 0), 0);
+    const totalIOwe = contacts.reduce((sum, c) => sum + (c.balance < 0 ? Math.abs(c.balance) : 0), 0);
+    const netExternal = totalOwedMe - totalIOwe;
+
+    return (
+      <div className="space-y-10 animate-fade-in relative z-10 pb-20">
+        {/* Hero Matrix */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <GlassCard className="md:col-span-2 bg-gradient-to-br from-[#FF2D55]/10 via-transparent to-transparent border-[#FF2D55]/20 p-10 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-[10px] font-black uppercase tracking-[4px] text-gray-500">Liquid Ecosystem Value</div>
+              <div className="text-6xl font-black tracking-tighter text-white">
+                ₹{(bankBalance + totalOwedMe - totalIOwe).toLocaleString()}
+              </div>
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                 <ShieldCheck className="w-3 h-3 text-[#FF2D55]" />
+                 Includes ₹{bankBalance.toLocaleString()} Liquid Capital
+              </div>
+            </div>
+            <div className="flex items-center gap-4 mt-8">
+              <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2">
+                <TrendingUp className="w-3 h-3 text-green-400" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">₹{totalOwedMe.toLocaleString()} Receivables</span>
+              </div>
+              <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2">
+                <TrendingDown className="w-3 h-3 text-[#FF2D55]" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">₹{totalIOwe.toLocaleString()} Payables</span>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="flex flex-col justify-between border-white/10">
+             <div className="space-y-4">
+               <div className="text-[10px] font-black uppercase tracking-[2px] text-gray-500">Core Engine Status</div>
+               <div className="flex items-center gap-2">
+                 <ShieldCheck className="w-5 h-5 text-green-400" />
+                 <span className="text-sm font-bold text-white tracking-tight">Active Surveillance</span>
+               </div>
+               <div className="h-px bg-white/5 w-full" />
+               <div className="flex items-center justify-between">
+                 <span className="text-[10px] font-black text-gray-500 uppercase">Nodes</span>
+                 <span className="text-xs font-black text-white">{contacts.length}</span>
+               </div>
+               <div className="flex items-center justify-between">
+                 <span className="text-[10px] font-black text-gray-500 uppercase">Records</span>
+                 <span className="text-xs font-black text-white">{expenses.length}</span>
+               </div>
+             </div>
+             <button 
+               onClick={() => setActiveTab('afford')}
+               className="w-full py-4 mt-6 bg-white/5 border border-white/10 hover:bg-[#FF2D55]/10 hover:border-[#FF2D55]/30 rounded-2xl flex items-center justify-center gap-2 transition-all transition-colors"
+             >
+               <span className="text-[10px] font-black uppercase tracking-widest">Run Budget Audit</span>
+             </button>
+          </GlassCard>
+        </section>
+
+        {/* Dynamic Nodes Grid */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-[12px] font-black uppercase tracking-[4px] text-gray-500">High Impact Nodes</h3>
+            <button onClick={() => setActiveTab('people')} className="text-[10px] font-black uppercase tracking-widest text-[#FF2D55] hover:underline">View All Identities</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {contacts.filter(c => c.balance !== 0).slice(0, 3).map(contact => (
+              <GlassCard 
+                key={contact.id} 
+                onClick={() => setSelectedPerson(contact)}
+                className={`group border-l-4 ${contact.balance > 0 ? 'border-l-green-500/50' : 'border-l-[#FF2D55]/50'}`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm font-black tracking-tight group-hover:text-[#FF2D55] transition-colors">{contact.name}</div>
+                    <div className="text-[9px] text-gray-500 font-black uppercase tracking-widest mt-0.5">{contact.handle}</div>
+                  </div>
+                  <div className={`text-lg font-black tracking-tighter ${contact.balance > 0 ? 'text-green-400' : 'text-[#FF2D55]'}`}>
+                    ₹{Math.abs(contact.balance).toLocaleString()}
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        </section>
+
+        {/* Global Feed Preview */}
+        <section className="space-y-6">
+           <div className="flex items-center justify-between px-2">
+              <h3 className="text-[12px] font-black uppercase tracking-[4px] text-gray-500">Recent Stream</h3>
+              <button onClick={() => setActiveTab('history')} className="text-[10px] font-black uppercase tracking-widest text-[#FF2D55] hover:underline">Full Logbook</button>
+           </div>
+           <div className="space-y-4">
+              {expenses.slice(0, 5).map(ex => (
+                <div key={ex.id} className="glass p-6 rounded-3xl border-white/5 flex items-center justify-between hover:bg-white/[0.03] transition-all cursor-pointer" onClick={() => setEditingExpense(ex)}>
+                   <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-xl ${ex.type === 'owed' ? 'bg-green-500/10 text-green-400' : 'bg-[#FF2D55]/10 text-[#FF2D55]'}`}>
+                         {ex.type === 'owed' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
+                      </div>
+                      <div>
+                         <div className="text-sm font-bold tracking-tight">{ex.description}</div>
+                         <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{new Date(ex.timestamp?.toDate?.() || 0).toLocaleDateString()}</div>
+                      </div>
+                   </div>
+                   <div className={`text-sm font-black ${ex.type === 'owed' ? 'text-green-400' : 'text-[#FF2D55]'}`}>
+                     {ex.type === 'owed' ? '+' : '-'}{ex.myShare.toLocaleString()}
+                   </div>
+                </div>
+              ))}
+           </div>
+        </section>
+      </div>
+    );
+  };
+
+
   const processTransaction = async (txData: any, newContactHandles: string[] = []) => {
     if (!user) return;
     setIsAiProcessing(true);
@@ -174,6 +298,7 @@ export default function ExpenseManager() {
     try {
       const batch = writeBatch(db);
       const total = txData.totalAmount;
+      const isMePayer = txData.payer === 'me';
 
       // Update bank balance if 'me' paid
       if (isMePayer) {
@@ -201,8 +326,6 @@ export default function ExpenseManager() {
         }
         return total / handles.length;
       };
-      
-      const isMePayer = txData.payer.toLowerCase() === 'me' || txData.payer === 'me';
       
       let updatedCount = 0;
       
@@ -991,6 +1114,7 @@ export default function ExpenseManager() {
   };
 
   const navigation = [
+    { id: 'summary', icon: LayoutGrid, label: 'Summary' },
     { id: 'chat', label: 'Matrix', icon: Bot },
     { id: 'people', icon: Users, label: 'People' },
     { id: 'history', icon: History, label: 'History' },
@@ -1030,6 +1154,7 @@ export default function ExpenseManager() {
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {selectedPerson ? renderProfile() : (
           <div className="max-w-4xl mx-auto py-8 px-6">
+            {activeTab === 'summary' && renderSummary()}
             {activeTab === 'chat' && renderChat()}
             {activeTab === 'people' && renderPeople()}
             {activeTab === 'history' && (

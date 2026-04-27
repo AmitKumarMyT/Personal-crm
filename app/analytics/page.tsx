@@ -176,7 +176,7 @@ export default function AnalyticsPage() {
                     contentStyle={{ backgroundColor: '#1a1a1a', border: 'none', borderRadius: '12px' }}
                     itemStyle={{ fontSize: '10px' }}
                   />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeights: 'bold', letterSpacing: '1px' }} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '1px' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

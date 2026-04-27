@@ -1,12 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 export async function POST(req: Request) {
   try {
     const { question, context, mode } = await req.json();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
     let prompt = "";
 
     if (mode === 'dsa-help') {
@@ -43,9 +41,12 @@ export async function POST(req: Request) {
       `;
     }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    });
+    
+    const text = result.text || "";
 
     return new Response(JSON.stringify({ text }), {
       headers: { "Content-Type": "application/json" },
