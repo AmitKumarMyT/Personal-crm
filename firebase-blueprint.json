@@ -1,0 +1,231 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User specific settings and progress info",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "height": { "type": "string" },
+        "weight_kg": { "type": "number" },
+        "goal": { "type": "string", "enum": ["hypertrophy"] },
+        "equipment": { "type": "array" },
+        "priority_phase": { "type": "string", "enum": ["arms", "legs", "lower_back_core"] },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "totalVolume": { "type": "number" },
+            "streak": { "type": "number" }
+          }
+        }
+      },
+      "required": ["userId", "goal"]
+    },
+    "WorkoutRecord": {
+      "title": "WorkoutRecord",
+      "description": "A single workout session session log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "session": {
+          "type": "object",
+          "properties": {
+            "date": { "type": "string" },
+            "phase": { "type": "string" },
+            "duration_minutes": { "type": "number" },
+            "energy_level": { "type": "string" },
+            "completed": { "type": "boolean" }
+          }
+        },
+        "exercises": { "type": "array" },
+        "summary": { "type": "object" },
+        "aiMetadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message in a chat thread",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "text": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "A person in the expense manager",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "handle": { "type": "string" },
+        "balance": { "type": "number", "description": "Positive means they owe me, negative means I owe them" }
+      }
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A transaction log for expenses",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "payer": { "type": "string" },
+        "involved": { "type": "array", "items": { "type": "string" } },
+        "personId": { "type": "string", "description": "The contact this record is associated with" },
+        "myShare": { "type": "number", "description": "The specific amount I owe or am owed by this person for this tx" },
+        "type": { "type": "string", "enum": ["owe", "owed"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isSettlement": { "type": "boolean" }
+      }
+    },
+    "ExpenseChat": {
+      "title": "ExpenseChat",
+      "description": "Chat log for the expense engine",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "ai"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "BankBalance": {
+      "title": "BankBalance",
+      "description": "Snapshots of account balances",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "balance": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RecurringPayment": {
+      "title": "RecurringPayment",
+      "description": "Automated future expenses",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "frequency": { "type": "string", "enum": ["weekly", "monthly"] },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "type": { "type": "string", "enum": ["emi", "subscription"] },
+        "lastGenerated": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "Debt tracking with EMI calculations",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "principal": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "tenureMonths": { "type": "number" },
+        "emi": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "startDate": { "type": "string", "format": "date" }
+      }
+    },
+    "LearningQuestion": {
+      "title": "LearningQuestion",
+      "description": "DSA or career related problems",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "topic": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "source": { "type": "string" },
+        "link": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "LearningAttempt": {
+      "title": "LearningAttempt",
+      "description": "Individual problem solving session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "questionId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "timeTaken": { "type": "number", "description": "Minutes taken" },
+        "difficultyFelt": { "type": "number", "description": "1 to 5 scale" },
+        "solved": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "LearningPath": {
+      "title": "LearningPath",
+      "description": "Structured curriculum or career roadmap",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Root user document"
+    },
+    "/users/{userId}/workouts/{workoutId}": {
+      "schema": "WorkoutRecord",
+      "description": "User workout logs"
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Chat history"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": "Contact",
+      "description": "Expenses contacts"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Expense records"
+    },
+    "/users/{userId}/expense_chats/{chatId}": {
+      "schema": "ExpenseChat",
+      "description": "Expense chat logs"
+    },
+    "/users/{userId}/bank_balances/{balanceId}": {
+      "schema": "BankBalance",
+      "description": "Balance snapshots"
+    },
+    "/users/{userId}/recurring_payments/{paymentId}": {
+      "schema": "RecurringPayment",
+      "description": "Auto-recurring financial obligations"
+    },
+    "/users/{userId}/loans/{loanId}": {
+      "schema": "Loan",
+      "description": "Personal or bank loans"
+    },
+    "/users/{userId}/learning_questions/{questionId}": {
+      "schema": "LearningQuestion",
+      "description": "DSA problem database"
+    },
+    "/users/{userId}/learning_attempts/{attemptId}": {
+      "schema": "LearningAttempt",
+      "description": "DSA problem solve logs"
+    },
+    "/users/{userId}/learning_paths/{pathId}": {
+      "schema": "LearningPath",
+      "description": "Custom roadmaps"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Primitive Definitions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Entity Validation Blueprints
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId']) &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidChat(data) {
+      return data.keys().hasAll(['userId', 'text', 'role', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.text is string && data.text.size() <= 4000;
+    }
+
+    function isValidContact(data) {
+      return data.keys().hasAll(['userId', 'name']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['userId', 'amount', 'payer', 'involved', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.amount is number;
+    }
+
+    function isValidLearningQuestion(data) {
+      return data.keys().hasAll(['userId', 'title', 'topic', 'difficulty']) &&
+             data.userId == request.auth.uid &&
+             data.title is string;
+    }
+
+    function isValidLearningAttempt(data) {
+      return data.keys().hasAll(['userId', 'questionId', 'solved', 'timestamp']) &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidRecurringPayment(data) {
+      return data.keys().hasAll(['userId', 'title', 'amount', 'frequency']) &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidLoan(data) {
+      return data.keys().hasAll(['userId', 'title', 'principal']) &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidBankBalance(data) {
+      return data.keys().hasAll(['userId', 'amount', 'updatedAt']) &&
+             data.userId == request.auth.uid;
+    }
+
+    // 3. Collection Match Blocks
+    
+    match /users/{userId} {
+      allow get, update, create: if isOwner(userId);
+      
+      match /{collection}/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /expenses/{id} {
+        allow create, update: if isOwner(userId) && isValidExpense(incoming());
+      }
+      
+      match /chats/{id} {
+        allow create, update: if isOwner(userId) && isValidChat(incoming());
+      }
+
+      match /expense_chats/{id} {
+        allow create, update: if isOwner(userId) && isValidChat(incoming());
+      }
+
+      match /contacts/{id} {
+        allow create, update: if isOwner(userId) && isValidContact(incoming());
+      }
+
+      match /learning_questions/{id} {
+        allow create, update: if isOwner(userId) && isValidLearningQuestion(incoming());
+      }
+
+      match /learning_attempts/{id} {
+        allow create, update: if isOwner(userId) && isValidLearningAttempt(incoming());
+      }
+
+      match /recurring_payments/{id} {
+        allow create, update: if isOwner(userId) && isValidRecurringPayment(incoming());
+      }
+
+      match /loans/{id} {
+        allow create, update: if isOwner(userId) && isValidLoan(incoming());
+      }
+
+      match /bank_balances/{id} {
+        allow create, update: if isOwner(userId) && isValidBankBalance(incoming());
+      }
+    }
+  }
+}
